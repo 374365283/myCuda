@@ -186,7 +186,7 @@ int main() {
     // printf("cpu with no optimization time:%f\n",duration);
 
 
-    // record gpu with no optimization execution time
+    // record gpu with naive gemm execution time
     for (int i = 0; i < warmup_steps; ++i) {
         gpuNaiveSgemm(M, N, K, a, matrix_in1, matrix_in2, b, matrix_out_gpu_naive);
     }
@@ -199,7 +199,7 @@ int main() {
     printf("gpu with no optimization time:%f\n",duration);
 
 
-    // record gpu with no optimization execution time
+    // record gpu with opt gemm execution time
     for (int i = 0; i < warmup_steps; ++i) {
         gpuOptSgemm(M, N, K, a, matrix_in1, matrix_in2, b, matrix_out_gpu_opt);
     }

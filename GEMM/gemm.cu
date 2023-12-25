@@ -302,6 +302,7 @@ int main(int argc, char** argv) {
     checkCudaErrors(cudaMemcpy( d_A, h_A, bytes_A, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy( d_B, h_B, bytes_B, cudaMemcpyHostToDevice));
     
+    // My sgemm
     cudaEvent_t start, stop;
     checkCudaErrors(cudaEventCreate(&start));
     checkCudaErrors(cudaEventCreate(&stop));
@@ -320,7 +321,6 @@ int main(int argc, char** argv) {
     checkCudaErrors(cudaEventSynchronize(stop));
     checkCudaErrors(cudaEventElapsedTime(&msecTotal, start, stop));
 
-
     checkCudaErrors(cudaMemcpy( h_C, d_C, bytes_C, cudaMemcpyDeviceToHost));
 
     msecPerMatrixMul[0] = msecTotal / nIter;
@@ -330,8 +330,7 @@ int main(int argc, char** argv) {
         msecPerMatrixMul[0],
         flopsPerMatrixMul);
 
-    // cublas
-    
+    // cublas 
     cublasHandle_t blas_handle;  
     cublasCreate(&blas_handle);
     float alpha = 1.0;
