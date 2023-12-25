@@ -5,9 +5,9 @@
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
 
-#define M 4096
-#define N 4096
-#define K 4096
+#define M 128
+#define N 128
+#define K 128
 #define EPSILON 0.01
 #define TILE_WIDTH 16
 #define IDX2C(i, j, ld) ((j) * (ld) + (i))
@@ -126,6 +126,7 @@ void gpuBlasSgemm(int m, int n, int k, const float alpha,
     cublasStatus_t status;
     cublasHandle_t handle;
     status = cublasCreate(&handle);
+    status = cublasSetMathMode(handle, CUBLAS_TF32_TENSOR_OP_MATH); //CUBLAS_TENSOR_OP_MATH
     //malloc on device
     float *devPtrA, *devPtrB, *devPtrC;
     cudaMalloc((void**)&devPtrA, sizeof(float) * m * k);
@@ -174,16 +175,16 @@ int main() {
     int steps = 10;
 
     // record cpu 
-    // for (int i = 0; i < warmup_steps; ++i) {
-    //     cpuSgemm(M, N, K, a, matrix_in1, matrix_in2, b, matrix_out_cpu);
-    // }
-    // start=clock();
-    // for (int i = 0; i < steps; ++i) {
-    //     cpuSgemm(M, N, K, a, matrix_in1, matrix_in2, b, matrix_out_cpu);
-    // }
-    // stop=clock();
-    // duration=(double)(stop-start)/(steps*CLOCKS_PER_SEC);
-    // printf("cpu with no optimization time:%f\n",duration);
+    for (int i = 0; i < warmup_steps; ++i) {
+        cpuSgemm(M, N, K, a, matrix_in1, matrix_in2, b, matrix_out_cpu);
+    }
+    start=clock();
+    for (int i = 0; i < steps; ++i) {
+        cpuSgemm(M, N, K, a, matrix_in1, matrix_in2, b, matrix_out_cpu);
+    }
+    stop=clock();
+    duration=(double)(stop-start)/(steps*CLOCKS_PER_SEC);
+    printf("cpu with no optimization time:%f\n",duration);
 
 
     // record gpu with naive gemm execution time
@@ -225,13 +226,29 @@ int main() {
     printf("gpu with cublas time:%f\n",duration);
 
     // check result                                             
-    // printf("check\n");
-    // for (int i = 0; i < M * N; ++i) {
-    //     float error = (matrix_out_gpu_naive[i] - matrix_out_gpu_blas[i]) / matrix_out_gpu_blas[i];
-    //     if (error < -EPSILON || error > EPSILON)
-    //         printf("wrong, %f, %f, %f\n", matrix_out_gpu_naive[i], matrix_out_gpu_blas[i], error);
-    // }
-    // printf("right\n");
+    printf("check naive gemm with cpu gemm\n");
+    for (int i = 0; i < M * N; ++i) {
+        float error = (matrix_out_gpu_naive[i] - matrix_out_cpu[i]) / matrix_out_cpu[i];
+        if (error < -EPSILON || error > EPSILON)
+            printf("wrong, %f, %f, %f\n", matrix_out_gpu_naive[i], matrix_out_cpu[i], error);
+    }
+    printf("right\n");
+
+    printf("check opt gemm with cpu gemm\n");
+    for (int i = 0; i < M * N; ++i) {
+        float error = (matrix_out_gpu_opt[i] - matrix_out_cpu[i]) / matrix_out_cpu[i];
+        if (error < -EPSILON || error > EPSILON)
+            printf("wrong, %f, %f, %f\n", matrix_out_gpu_opt[i], matrix_out_cpu[i], error);
+    }
+    printf("right\n");
+
+    printf("check cublas gemm with cpu gemm\n");
+    for (int i = 0; i < M * N; ++i) {
+        float error = (matrix_out_gpu_blas[i] - matrix_out_cpu[i]) / matrix_out_cpu[i];
+        if (error < -EPSILON || error > EPSILON)
+            printf("wrong, %f, %f, %f\n", matrix_out_gpu_blas[i], matrix_out_cpu[i], error);
+    }
+    printf("right\n");
 
     //release memory on host
     free(matrix_in1);
